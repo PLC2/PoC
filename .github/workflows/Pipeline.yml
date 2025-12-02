@@ -27,6 +27,29 @@ jobs:
       nvc-version:  ${{ matrix.version }}
       can-fail:     ${{ matrix.can-fail }}
 
+  ExportDrawio:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+  
+      - name: Run draw.io export in container
+        uses: addnab/docker-run-action@v3
+        with:
+          image: rlespinasse/drawio-export:latest
+          options: -v ${{ github.workspace }}:/data
+          run: |
+            cd /data
+            ./tools/GitLab-CI/export-drawio.sh test.drawio
+            ls -lAh
+  
+      - name: Upload PNG artifacts
+        uses: pyTooling/upload-artifact@v5
+        with:
+          name: drawio-png
+          path: |
+            *.png
+
   PublishTestResults:
     uses: pyTooling/Actions/.github/workflows/PublishTestResults.yml@r6
     needs:
