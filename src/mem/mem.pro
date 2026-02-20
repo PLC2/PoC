@@ -30,15 +30,15 @@ analyze ./ocram/ocram_sdp_wf.vhdl
 analyze ./ocram/ocram_sp.vhdl
 analyze ./ocram/ocram_tdp_wf.vhdl
 
-if { $::poc::vendor eq "Xilinx" } {
+if { $::poc::vendorName eq "Xilinx" } {
 	puts "No files for Xilinx."
 
-} elseif { $::poc::vendor eq "Altera" } {
+} elseif { $::poc::vendorName eq "Altera" } {
 	analyze ./ocram/altera/ocram_sp_altera.vhdl
 	analyze ./ocram/altera/ocram_tdp_altera.vhdl
 
-} elseif { $::poc::vendor ne "GENERIC" } {
-	puts "Unknown vendor '$::poc::vendor'!"
+} elseif { $::poc::vendorName ne "GENERIC" } {
+	puts "Unknown vendor '$::poc::vendorName'!"
 	exit 1
 }
 
@@ -49,16 +49,16 @@ analyze ./ocrom/ocrom_sp.vhdl
 analyze ./sdram/sdram_ctrl_fsm.vhdl
 
 # TODO: Remove Spartan 3 and Cyclone 3 files
-if { $::poc::vendor eq "Xilinx" } {
+if { $::poc::vendorName eq "Xilinx" } {
 	analyze ./sdram/sdram_ctrl_phy_s3esk.vhdl
 	analyze ./sdram/sdram_ctrl_s3esk.vhdl
 
-} elseif { $::poc::vendor eq "Altera" } {
+} elseif { $::poc::vendorName eq "Altera" } {
 	analyze ./sdram/sdram_ctrl_phy_de0.vhdl
 	analyze ./sdram/sdram_ctrl_de0.vhdl
 
-} elseif { $::poc::vendor ne "GENERIC" } {
-	puts "Unknown vendor '$::poc::vendor'!"
+} elseif { $::poc::vendorName ne "GENERIC" } {
+	puts "Unknown vendor '$::poc::vendorName' in mem!"
 	exit 1
 }
 

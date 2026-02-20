@@ -63,7 +63,7 @@ begin
 
   begin
     -------------------------------------
-    -- Normal Rread and Wirte
+    -- Normal Rread and Write
     -------------------------------------
     wait until nReset = '1' ;
     WaitForClock(MasterRec, 2);

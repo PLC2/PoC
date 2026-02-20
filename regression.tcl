@@ -22,72 +22,46 @@
 # limitations under the License.
 # =============================================================================
 
+source ../lib/OSVVM-Scripts/StartUp.tcl
+source ../tools/OSVVM/poc.tcl
+
+namespace import ::poc::*
+
+# Skip report generation if executed within Sigasi/VS Code
+if {[info exists ::env(OSVVM_TOOL)] && $::env(OSVVM_TOOL) eq "Sigasi"} {
+	set ::osvvm::GenerateOsvvmReports "false"
+}
+if {[info exists ::env(GITLAB_CI)]} {
+	set buildNamePrefix ""
+} else {
+	set buildNamePrefix "${::osvvm::ToolNameVersion}-"
+}
+
 namespace eval ::poc {
-	proc getEnv {var {default ""}} {
-		if {[info exists ::env($var)]} {
-			return $::env($var)
-		}
-		return $default
-	}
-
-	variable vendorName [getEnv VENDOR "GENERIC"]
-	variable boardName  [getEnv BOARD  "GENERIC"]
-
-	variable myConfigFile  "../tb/common/my_config_$boardName.vhdl"
+	variable myConfigFile  "../tb/common/my_config_${boardName}.vhdl"
 	variable myProjectFile "../tb/common/my_project.vhdl"
-
-	variable vendor $vendorName; # GENERIC for vendor-less build; Xilinx, Altera,... for vendor specific build
 }
 
-if {[info exists nvc_dataDir]} {
-	source ../lib/OSVVM-Scripts/StartNVC.tcl
-} else {
-	source ../lib/OSVVM-Scripts/StartUp.tcl
+build ../lib/OsvvmLibraries.pro [BuildName "${buildNamePrefix}OsvvmLibraries"]
+if {$::osvvm::AnalyzeErrorCount > 0} {
+	puts "ERROR: While building OSVVM"
+	scriptExit
 }
 
-build ../lib/OsvvmLibraries.pro
+# -s -stop <i>    set the stop counts to <i>
+# -d -debug       enable debugging
+# -w -waves       save waveforms
+configureOSVVM -stop 1 ;# -debug
 
-if {$::osvvm::ToolName eq "GHDL"} {
-	SetExtendedAnalyzeOptions  {-frelaxed -Wno-specs -Wno-elaboration}
-	SetExtendedSimulateOptions {-frelaxed -Wno-specs -Wno-binding}
+build ../src/PoC.pro [BuildName "${buildNamePrefix}PoC"]
+if {$::osvvm::AnalyzeErrorCount > 0} {
+	puts "ERROR: While building PoC Library"
 
-} elseif {$::osvvm::ToolName eq "RivieraPRO"} {
-	set RivieraSimOptions {-unbounderror}
+	puts $::errorInfo
+	puts "====================================="
+	puts $::osvvm::BuildErrorInfo
 
-} elseif {$::osvvm::ToolName eq "NVC"} {
-	SetExtendedAnalyzeOptions {--relaxed}
-
-} elseif {$::osvvm::ToolName eq "Sigasi"} {
-
-} else {
-	error [format {
-======================================
-Unknown simulator selected: %s
-
-Supported simulators:
-  - GHDL
-  - RivieraPRO
-  - NVC
-Other tools:
-  - Sigasi in VSCode
-======================================
-} $::osvvm::ToolName]
+	scriptExit
 }
 
-set ::osvvm::AnalyzeErrorStopCount  1
-set ::osvvm::SimulateErrorStopCount 1
-set ::osvvm::TclDebug 1
-set ::osvvm::FailOnBuildErrors 1
-
-proc disabled {args} {
-	puts "Disabled from analysis: $args"
-}
-proc duplicate {args} {
-	puts "Duplicate file: $args"
-}
-
-build ../src/PoC.pro
-
-# SetSaveWaves
-
-build ../tb/RunAllTests.pro
+build ../tb/RunAllTests.pro  [BuildName "${buildNamePrefix}RunAllTests"]

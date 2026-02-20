@@ -101,7 +101,7 @@ begin
 	-- create nReset
 	Osvvm.ClockResetPkg.CreateReset (
 		Reset       => Reset,
-		ResetActive => '0',
+		ResetActive => '1',
 		Clk         => Clk,
 		Period      => 7 * tperiod_Clk,
 		tpd         => tpd

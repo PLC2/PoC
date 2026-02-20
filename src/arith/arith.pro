@@ -22,7 +22,7 @@
 
 analyze ./arith.pkg.vhdl
 
-if { $::poc::vendor eq "Xilinx" } {
+if { $::poc::vendorName eq "Xilinx" } {
 	analyze ./xilinx/arith_carrychain_inc_xilinx.vhdl
 	analyze ./xilinx/arith_cca_xilinx.vhdl
 	analyze ./xilinx/arith_addw_xilinx.vhdl
@@ -30,11 +30,11 @@ if { $::poc::vendor eq "Xilinx" } {
 	analyze ./xilinx/arith_prefix_and_xilinx.vhdl
 	analyze ./xilinx/arith_prefix_or_xilinx.vhdl
 
-} elseif { $::poc::vendor eq "Altera" } {
+} elseif { $::poc::vendorName eq "Altera" } {
 	puts "No Altera files for arith."
 
-} elseif { $::poc::vendor ne "GENERIC" } {
-	puts "Unknown vendor '$::poc::vendor'!"
+} elseif { $::poc::vendorName ne "GENERIC" } {
+	puts "Unknown vendor '$::poc::vendorName' in arith!"
 	exit 1
 }
 

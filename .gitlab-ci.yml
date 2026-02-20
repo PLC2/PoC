@@ -1,13 +1,6 @@
-stages:
-  - prepare
-  - build_osvvm
-  - build_poc
-  - test
-  - pages
-
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
-  SIMULATOR_PAGES: "GHDL"  # simulator from which the results should be published on GitLab pages (GHDL, Riviera-PRO)
+  SIMULATOR_PAGES: "NVC"  # simulator from which the results should be published on GitLab pages (GHDL, Riviera-PRO)
 
 #pyIPCMI-Selftest:
 #  stage: Selftest
@@ -21,7 +14,6 @@ variables:
 #    - ./tools/GitLab-CI/poc.run.sh "PoC.*"
 
 Scripts:
-  stage: prepare
   image: ${CI_REGISTRY}/docker-images/base-image:alpine
   script:
     - cp src/common/my_project.vhdl.template tb/common/my_project.vhdl  # use CopyFile when its supporting renaming
@@ -144,7 +136,7 @@ Scripts:
     paths:
       - temp/$SIMULATOR
     reports:
-      junit: "temp/$SIMULATOR/$RESULT_NAME/*.xml"
+      junit: "temp/junit/*.xml"
     expire_in: 1 week
     when: always
 
@@ -171,6 +163,9 @@ Scripts:
       else
         echo "Error: Simulation for $RESULT_NAME did not pass!" && exit 1
       fi
+  after_script:
+    - mkdir temp/junit
+    - CopyFile --rename "temp/$SIMULATOR/$RESULT_NAME/$RESULT_NAME.xml" "temp/junit/${SIMULATOR}_$RESULT_NAME.xml"
 
   allow_failure: true  # if case the Riviera license is in use
 
@@ -186,6 +181,9 @@ Scripts:
       else
         echo "Error: Simulation for $RESULT_NAME did not pass!" && exit 1
       fi
+  after_script:
+    - mkdir temp/junit
+    - CopyFile --rename "temp/NVC/$RESULT_NAME/$RESULT_NAME.xml" "temp/junit/NVC_$RESULT_NAME.xml"
 
 
 # ---------------
@@ -194,14 +192,12 @@ Scripts:
 .GHDL:
   parallel:
     matrix:
-      - GHDL_BACKEND: "llvm"
-      - GHDL_BACKEND: "mcode"
+      - GHDL_BACKEND: ["llvm", "mcode"]
   image: ${CI_REGISTRY}/docker-images/ghdl:${GHDL_BACKEND}
   variables:
     SIMULATOR: "GHDL"
 
 GHDL_OSVVM_compile:
-  stage: build_osvvm
   extends:
     - .GHDL
     - .compile
@@ -212,7 +208,6 @@ GHDL_OSVVM_compile:
     TCL_FILE: "osvvm_compile.tcl"
 
 GHDL_PoC_compile:
-  stage: build_poc
   extends:
     - .GHDL
     - .compile
@@ -225,7 +220,6 @@ GHDL_PoC_compile:
     TCL_FILE: "poc_compile.tcl"
 
 GHDL_OSVVM_sim:
-  stage: test
   extends:
     - .GHDL
     - .simulate
@@ -243,7 +237,6 @@ GHDL_OSVVM_sim:
     RESULT_NAME: "lib_RunAllTests"
 
 GHDL_PoC_sim:
-  stage: test
   extends:
     - .GHDL
     - .simulate
@@ -255,6 +248,9 @@ GHDL_PoC_sim:
   variables:
     TCL_FILE: "poc_sim.tcl"
     RESULT_NAME: "tb_RunAllTests"
+  artifacts:
+    paths:
+      - temp/junit
 
 # ------------------
 # ---- Riviera -----
@@ -266,7 +262,6 @@ GHDL_PoC_sim:
     LM_LICENSE_FILE: "1717@flexlm.plc2.de:1718@flexlm.plc2.de:1719@flexlm.plc2.de"
 
 RIVIERA_OSVVM_compile:
-  stage: build_osvvm
   extends:
     - .RIVIERA-PRO
     - .compile
@@ -277,7 +272,6 @@ RIVIERA_OSVVM_compile:
     TCL_FILE: "osvvm_compile.tcl"
 
 RIVIERA_PoC_compile:
-  stage: build_poc
   extends:
     - .RIVIERA-PRO
     - .compile
@@ -290,7 +284,6 @@ RIVIERA_PoC_compile:
     TCL_FILE: "poc_compile.tcl"
 
 RIVIERA_OSVVM_sim:
-  stage: test
   extends:
     - .RIVIERA-PRO
     - .simulate
@@ -311,7 +304,6 @@ RIVIERA_OSVVM_sim:
     RESULT_NAME: "lib_RunAllTests"
 
 RIVIERA_PoC_sim:
-  stage: test
   extends:
     - .RIVIERA-PRO
     - .simulate
@@ -326,6 +318,9 @@ RIVIERA_PoC_sim:
   variables:
     TCL_FILE: "poc_sim.tcl"
     RESULT_NAME: "tb_RunAllTests"
+  artifacts:
+    paths:
+     - temp/junit
 
 
 # --------------
@@ -337,7 +332,6 @@ RIVIERA_PoC_sim:
     SIMULATOR: "NVC"
 
 NVC_OSVVM_compile:
-  stage: build_osvvm
   extends:
     - .NVC
     - .compileNVC
@@ -348,7 +342,6 @@ NVC_OSVVM_compile:
     TCL_FILE: "osvvm_compile.tcl"
 
 NVC_PoC_compile:
-  stage: build_poc
   extends:
     - .NVC
     - .compileNVC
@@ -359,8 +352,8 @@ NVC_PoC_compile:
       artifacts: true
   variables:
     TCL_FILE: "poc_compile.tcl"
+
 NVC_OSVVM_sim:
-  stage: test
   extends:
     - .NVC
     - .simulateNVC
@@ -378,7 +371,6 @@ NVC_OSVVM_sim:
     RESULT_NAME: "lib_RunAllTests"
 
 NVC_PoC_sim:
-  stage: test
   extends:
     - .NVC
     - .simulateNVC
@@ -390,53 +382,92 @@ NVC_PoC_sim:
   variables:
     TCL_FILE: "poc_sim.tcl"
     RESULT_NAME: "tb_RunAllTests"
+  artifacts:
+    paths:
+      - temp/junit
+
+
+# --------------------------
+# ----- Documentation ------
+# --------------------------
+MergeReports:
+  image: ${CI_REGISTRY}/docker-images/base-image:alpine
+  needs:
+    - job: GHDL_PoC_sim
+      artifacts: true
+    - job: RIVIERA_PoC_sim
+      artifacts: true
+    - job: NVC_PoC_sim
+      artifacts: true
+  before_script:
+    - pip install pyEDAA.Reports
+    - pip install colorama
+  script:
+    - mkdir temp/report/unit
+    - touch temp/report/unit/unittest.xml
+    - pyedaa-reports -v unittest "--merge=Any-JUnit:temp/junit/*.xml" "--output=pyTest-JUnit:temp/report/unit/unittest.xml"
+  artifacts:
+    paths:
+      - temp/report/unit/
+
+Sphinx:
+  image: ${CI_REGISTRY}/docker-images/base-image:alpine
+  needs:
+    - job: MergeReports
+      artifacts: true
+  parallel:
+    matrix:
+      - SPHINX_BUILDER: ["html", "latex"]
+  before_script:
+    - apt-get update
+    - pip install -U -r docs/requirements.txt
+  script:
+    - cd docs
+    - sphinx-build --verbose --builder ${SPHINX_BUILDER} -d _build/doctrees --jobs 4 -w _build/${SPHINX_BUILDER}.log . _build/${SPHINX_BUILDER}
+  artifacts:
+    paths:
+      - docs/_build/${SPHINX_BUILDER}
+
+MikTeX:
+  needs:
+    - job: Sphinx
+      parallel:
+        matrix:
+          - SPHINX_BUILDER: "latex"
+      artifacts: true
+  image: ${CI_REGISTRY}/docker-images/miktex:sphinx
+  script:
+    - cd docs/_build/latex
+    - exec-LaTeX.sh --xelatex "PoC.tex"
+  after_script:
+    - CopyFile docs/_build/latex/PoC.pdf .
+  artifacts:
+    paths:
+      - ./*.pdf
+  allow_failure: true
+
 
 # ------------------
 # ----- Pages ------
 # ------------------
 .pages:
-  stage: pages
   image: ${CI_REGISTRY}/docker-images/base-image:alpine
   variables:
     GIT_SUBMODULE_STRATEGY: normal
+  pages: true
   before_script:
-    - apk add rsync
+    - apk update
+    - apk add tree
   script:
-    - mkdir -p public/static
-    - rsync -av --progress temp/$SIMULATOR_PAGES/ ./public --include="*/" --include="*.html" --include="*.log" --include="*.png" --include="*.css" --exclude="*"
-    - cp temp/$SIMULATOR_PAGES/reports/OsvvmLogo.png public/static/
-    - |
-      echo "Chosen simulator: $SIMULATOR_PAGES"
-      echo "Write an 'index.html' ..."
-      tee public/index.html <<EOF
-      <html>
-        <head>
-          <title>PoC Simulation Results</title>
-        </head>
-        <body>
-          <center><img src="static/OsvvmLogo.png" /></center>
-          <h1>PoC Simulation Results</h1>
-
-          <h2>OSVVM Analysis Reports</h2>
-          <a href="lib_OsvvmLibraries.html">OSVVM-Libaries</a><br />
-
-          <h2>OSVVM Simulation Reports</h2>
-          <a href="lib_RunAllTests.html">OSVVM-Libaries-tests</a><br />
-
-          <h2>PoC Analysis Reports</h2>
-          <a href="src_PoC.html">PoC-analysis</a><br />
-
-          <h2>Simulation Reports</h2>
-          <a href="tb_RunAllTests.html">PoC-tests</a><br />
-        </body>
-      </html>
-      EOF
+    - CopyDir docs/_build/html       public
+    #- CopyFile PoC.pdf  public
     - tree public
   after_script:
     - echo "Pages accessible at ${CI_PAGES_URL}"
   artifacts:
     paths:
       - public
+
 
 pagesGHDL:
   rules:
@@ -468,17 +499,18 @@ pagesRiviera:
     - .pages
 
 pagesNVC:
+  extends:
+    - .pages
   rules:
     - if: >
         $SIMULATOR_PAGES == "NVC" &&
-        $CI_PIPELINE_SOURCE == "push" &&
-        $CI_COMMIT_BRANCH =~ /^(main|master|dev)$/
+        $CI_PIPELINE_SOURCE == "push"
   needs:
-    - job: NVC_OSVVM_sim  # main only
+    - job: NVC_OSVVM_sim
       artifacts: true
       optional: true
     - job: NVC_PoC_sim
       artifacts: true
       optional: true
-  extends:
-    - .pages
+    - job: Sphinx
+      artifacts: true

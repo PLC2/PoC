@@ -26,7 +26,7 @@
 			],
 			"dependencies": [
 				{
-					"Quartus": [
+					"Quartus25.3": [
 						"altera_mf"
 					]
 				}

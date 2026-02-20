@@ -35,18 +35,18 @@ analyze ./ddrio/ddrio_in.vhdl
 analyze ./ddrio/ddrio_inout.vhdl
 analyze ./ddrio/ddrio_out.vhdl
 
-if { $::poc::vendor eq "Xilinx" } {
+if { $::poc::vendorName eq "Xilinx" } {
 	analyze ./ddrio/ddrio_in_xilinx.vhdl
 	analyze ./ddrio/ddrio_inout_xilinx.vhdl
 	analyze ./ddrio/ddrio_out_xilinx.vhdl
 
-} elseif { $::poc::vendor eq "Altera" } {
+} elseif { $::poc::vendorName eq "Altera" } {
 	analyze ./ddrio/ddrio_in_altera.vhdl
 	analyze ./ddrio/ddrio_inout_altera.vhdl
 	analyze ./ddrio/ddrio_out_altera.vhdl
 
-} elseif { $::poc::vendor ne "GENERIC" } {
-	puts "Unknown vendor '$::poc::vendor'!"
+} elseif { $::poc::vendorName ne "GENERIC" } {
+	puts "Unknown vendor '$::poc::vendorName' in io!"
 	exit 1
 }
 

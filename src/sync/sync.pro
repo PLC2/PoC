@@ -20,18 +20,18 @@
 
 analyze ./sync.pkg.vhdl
 
-if { $::poc::vendor eq "Xilinx" } {
+if { $::poc::vendorName eq "Xilinx" } {
 	analyze ./sync_Bits_Xilinx.vhdl
 	analyze ./sync_Reset_Xilinx.vhdl
 	analyze ./sync_Pulse_Xilinx.vhdl
 
-} elseif { $::poc::vendor eq "Altera" } {
+} elseif { $::poc::vendorName eq "Altera" } {
 	analyze ./sync_Bits_Altera.vhdl
 	analyze ./sync_Reset_Altera.vhdl
 	analyze ./sync_Pulse_Altera.vhdl
 
-} elseif { $::poc::vendor ne "GENERIC" } {
-	puts "Unknown vendor '$::poc::vendor'!"
+} elseif { $::poc::vendorName ne "GENERIC" } {
+	puts "Unknown vendor '$::poc::vendorName' in sync!"
 	exit 1
 }
 
