@@ -1,7 +1,8 @@
 -- =============================================================================
 -- Authors:         Iqbal Asif
+--                  Stefan Unrein
 --
--- Entity:          TestController for a dstruct_OutOfOrderBuffer
+-- Entity:      Test controller for dstruct_OutOfOrderBuffer
 --
 -- Description:
 -- -------------------------------------
@@ -24,43 +25,42 @@
 -- limitations under the License.
 -- =============================================================================
 
-library IEEE ;
-use     IEEE.std_logic_1164.all ;
-use     IEEE.numeric_std.all ;
-use     IEEE.numeric_std_unsigned.all ;
-use     IEEE.math_real.all ;
+library IEEE;
+use     IEEE.std_logic_1164.all;
+use     IEEE.numeric_std.all;
 
 library PoC;
 use     PoC.utils.all;
-use     PoC.vectors.all;
 
-library OSVVM ;
-context OSVVM.OsvvmContext ;
+library OSVVM;
+context OSVVM.OsvvmContext;
 use     OSVVM.ScoreboardPkg_slv.all ;
 
-
 entity dstruct_OutOfOrderBuffer_TestController is
-	generic(
-		NUM_INDEX : positive;
-		DATA_BITS : positive
+	generic (
+		NUM_INDEX      : positive;
+		DATA_BITS      : positive;
+		TAG_BITS       : natural;
+		MAX_REFERENCES : positive
 	);
 	port (
-			-- Global Signal Interface
-		Clock  : in  std_logic;
-		nReset : in  std_logic ;
+		-- Global Signal Interface
+		Clock    : in  std_logic;
+		nReset   : in  std_logic;
 
 		-- Put Port
 		Put      : out std_logic;
-		Full    : in  std_logic;
-		DataIn   : out std_logic_vector(DATA_BITS-1 downto 0);
+		DataIn   : out std_logic_vector(DATA_BITS -1 downto 0);
+		Full     : in  std_logic;
 		IndexOut : in  unsigned(log2ceilnz(NUM_INDEX) -1 downto 0);
+		PutReady : in  std_logic;
+		TagHit   : in  std_logic;
+		TagFull  : in  std_logic;
 
 		-- Get Port
 		Got      : out std_logic;
-		Valid    : in  std_logic;
 		IndexIn  : out unsigned(log2ceilnz(NUM_INDEX) -1 downto 0);
-		DataOut  : in  std_logic_vector(DATA_BITS-1 downto 0)
+		DataOut  : in  std_logic_vector(DATA_BITS -1 downto 0);
+		Valid    : in  std_logic
 	);
-
 end entity;
-

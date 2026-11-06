@@ -31,9 +31,26 @@ analyze tb_OutOfOrderBuffer.vhdl
 # 	SetCoverageSimulateEnable true
 # }
 
-RunTest TbOutOfOrderBuffer_WriteRead.vhdl
+RunTest TC_WriteRead.vhdl
 
 # Disable code coverage collection in simulations
 # if {$::osvvm::ToolVendor eq "Aldec"} {
 # 	SetCoverageSimulateEnable false
 # }
+
+# Tag lookup feature (TAG_BITS, MAX_REFERENCES) and IndexOut stability
+analyze TC_IndexStable.vhdl
+
+TestName TC_IndexStable_Tag0
+simulate TC_IndexStable [generic TAG_BITS 0] [generic MAX_REFERENCES 1]
+TestName TC_IndexStable_Tag4
+simulate TC_IndexStable [generic TAG_BITS 4] [generic MAX_REFERENCES 3]
+
+analyze TC_TagLookup.vhdl
+
+TestName TC_TagLookup_Tag4_Ref3
+simulate TC_TagLookup [generic TAG_BITS 4] [generic MAX_REFERENCES 3]
+TestName TC_TagLookup_Tag4_Ref1
+simulate TC_TagLookup [generic TAG_BITS 4] [generic MAX_REFERENCES 1]
+TestName TC_TagLookup_Tag0_Ref1
+simulate TC_TagLookup [generic TAG_BITS 0] [generic MAX_REFERENCES 1]

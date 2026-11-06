@@ -1,12 +1,8 @@
 -- =============================================================================
 -- Authors:         Iqbal Asif
+--                  Stefan Unrein
 --
---
--- Entity:          Testbench for a dstruct_OutOfOrderBuffer
---
--- Description:
--- -------------------------------------
--- .. TODO:: No documentation available.
+-- Entity:      Test harness for dstruct_OutOfOrderBuffer with tag lookup
 --
 -- License:
 -- =============================================================================
@@ -35,63 +31,66 @@ use     PoC.utils.all;
 library OSVVM;
 context OSVVM.OsvvmContext;
 
-
 entity tb_OutOfOrderBuffer is
+	generic (
+		NUM_INDEX      : positive := 6;   -- not a power of 2 on purpose
+		DATA_BITS      : positive := 12;
+		TAG_BITS       : natural  := 4;
+		MAX_REFERENCES : positive := 3
+	);
 end entity;
 
 architecture TestHarness of tb_OutOfOrderBuffer is
-	constant NUM_INDEX : positive := 13;
-	constant DATA_BITS : integer  := 32;
-
 	constant tpd         : time := 2 ns;
 	constant tperiod_Clk : time := 10 ns;
 
-	signal Clk    : std_logic :='0';
-	signal nReset : std_logic :='0';
+	signal Clk      : std_logic := '0';
+	signal nReset   : std_logic := '0';
 
 	signal Put      : std_logic;
-	signal Full    : std_logic;
-	signal DataIn   : std_logic_vector(DATA_BITS-1 downto 0);
+	signal DataIn   : std_logic_vector(DATA_BITS -1 downto 0);
+	signal Full     : std_logic;
 	signal IndexOut : unsigned(log2ceilnz(NUM_INDEX) -1 downto 0);
+	signal PutReady : std_logic;
+	signal TagHit   : std_logic;
+	signal TagFull  : std_logic;
 
 	signal Got      : std_logic;
-	signal Valid    : std_logic;
 	signal IndexIn  : unsigned(log2ceilnz(NUM_INDEX) -1 downto 0);
-	signal DataOut  : std_logic_vector(DATA_BITS-1 downto 0);
+	signal DataOut  : std_logic_vector(DATA_BITS -1 downto 0);
+	signal Valid    : std_logic;
 
-	component dstruct_OutOfOrderBuffer_TestController
-		generic(
-			NUM_INDEX : positive;
-			DATA_BITS : positive
+	component dstruct_OutOfOrderBuffer_TestController is
+		generic (
+			NUM_INDEX      : positive;
+			DATA_BITS      : positive;
+			TAG_BITS       : natural;
+			MAX_REFERENCES : positive
 		);
 		port (
-				-- Global Signal Interface
-			Clock  : in  std_logic;
-			nReset : in  std_logic ;
-
-			-- Put Port
+			Clock    : in  std_logic;
+			nReset   : in  std_logic;
 			Put      : out std_logic;
-			Full    : in  std_logic;
-			DataIn   : out std_logic_vector(DATA_BITS-1 downto 0);
+			DataIn   : out std_logic_vector(DATA_BITS -1 downto 0);
+			Full     : in  std_logic;
 			IndexOut : in  unsigned(log2ceilnz(NUM_INDEX) -1 downto 0);
-
-			-- Get Port
+			PutReady : in  std_logic;
+			TagHit   : in  std_logic;
+			TagFull  : in  std_logic;
 			Got      : out std_logic;
-			Valid    : in  std_logic;
 			IndexIn  : out unsigned(log2ceilnz(NUM_INDEX) -1 downto 0);
-			DataOut  : in  std_logic_vector(DATA_BITS-1 downto 0)
+			DataOut  : in  std_logic_vector(DATA_BITS -1 downto 0);
+			Valid    : in  std_logic
 		);
 	end component;
 
 begin
 
-	-- create Clock for TB and 100 Mhz
 	Osvvm.ClockResetPkg.CreateClock (
 		Clk    => Clk,
-		Period => Tperiod_Clk
+		Period => tperiod_Clk
 	);
 
-	-- create nReset
 	Osvvm.ClockResetPkg.CreateReset (
 		Reset       => nReset,
 		ResetActive => '0',
@@ -102,48 +101,51 @@ begin
 
 	TestCtrl : component dstruct_OutOfOrderBuffer_TestController
 		generic map (
-			NUM_INDEX => NUM_INDEX,
-			DATA_BITS => DATA_BITS
+			NUM_INDEX      => NUM_INDEX,
+			DATA_BITS      => DATA_BITS,
+			TAG_BITS       => TAG_BITS,
+			MAX_REFERENCES => MAX_REFERENCES
 		)
-		port map(
-				-- Global Signal Interface
-			Clock   => Clk,
-			nReset  => nReset,
-
-			-- Put Port
+		port map (
+			Clock    => Clk,
+			nReset   => nReset,
 			Put      => Put,
-			Full     => Full,
 			DataIn   => DataIn,
+			Full     => Full,
 			IndexOut => IndexOut,
-
-			-- Get Port
+			PutReady => PutReady,
+			TagHit   => TagHit,
+			TagFull  => TagFull,
 			Got      => Got,
-			Valid    => Valid,
 			IndexIn  => IndexIn,
-			DataOut  => DataOut
+			DataOut  => DataOut,
+			Valid    => Valid
 		);
 
 	DUT : entity PoC.dstruct_OutOfOrderBuffer
 		generic map (
-			DATA_BITS => DATA_BITS,
-			NUM_INDEX => NUM_INDEX
+			DATA_BITS      => DATA_BITS,
+			NUM_INDEX      => NUM_INDEX,
+			TAG_BITS       => TAG_BITS,
+			MAX_REFERENCES => MAX_REFERENCES
 		)
 		port map (
-			-- Global signals
-			Clock => Clk,
-			Reset => not nReset,
+			Clock    => Clk,
+			Reset    => not nReset,
 
-			-- Put Port
-			Put       => Put,
-			Full      => Full,
-			DataIn    => DataIn,
-			IndexOut  => IndexOut,
+			Put      => Put,
+			DataIn   => DataIn,
+			Full     => Full,
+			IndexOut => IndexOut,
 
-			-- Get Port
 			Got      => Got,
-			Valid    => Valid,
 			IndexIn  => IndexIn,
-			DataOut  => DataOut
+			DataOut  => DataOut,
+			Valid    => Valid,
+
+			PutReady => PutReady,
+			TagHit   => TagHit,
+			TagFull  => TagFull
 		);
 
 end architecture;

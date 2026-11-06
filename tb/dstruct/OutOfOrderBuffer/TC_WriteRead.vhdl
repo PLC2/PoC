@@ -24,10 +24,13 @@
 -- limitations under the License.
 -- =============================================================================
 
+library OSVVM ;
+use     OSVVM.ScoreboardPkg_slv.all ;
+
 architecture WriteRead of dstruct_OutOfOrderBuffer_TestController is
 
 	constant NUM_TRANSACTIONS : positive := 100000;
-	constant TestName : string := "TbOutOfOrderBuffer_WriteRead";
+	constant TestName : string := "TC_WriteRead";
 	signal TestDone         : integer_barrier := 1 ;
 	signal TransmissionDone : integer_barrier := 1 ;
 	signal SB : osvvm.ScoreboardPkg_slv.ScoreboardIdArrayType(0 to NUM_INDEX - 1);
@@ -184,7 +187,7 @@ begin
 
 end architecture;
 
-configuration TbOutOfOrderBuffer_WriteRead of tb_OutOfOrderBuffer is
+configuration TC_WriteRead of tb_OutOfOrderBuffer is
 	for TestHarness
 		for TestCtrl : dstruct_OutOfOrderBuffer_TestController
 			use entity work.dstruct_OutOfOrderBuffer_TestController(WriteRead);
