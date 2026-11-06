@@ -33,10 +33,10 @@ context OSVVM.OsvvmContext;
 
 entity tb_OutOfOrderBuffer is
 	generic (
-		NUM_INDEX      : positive := 6;   -- not a power of 2 on purpose
-		DATA_BITS      : positive := 12;
-		TAG_BITS       : natural  := 4;
-		MAX_REFERENCES : positive := 3
+		NUM_INDEX      : positive := 13;   -- not a power of 2 on purpose
+		DATA_BITS      : positive := 32;
+		TAG_BITS       : natural  := 0;
+		MAX_REFERENCES : positive := 1
 	);
 end entity;
 
